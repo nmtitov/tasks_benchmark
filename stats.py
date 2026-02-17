@@ -1,0 +1,76 @@
+import time
+
+
+class Stats:
+    def __init__(self):
+        self.latencies = []
+        self.errors = 0
+        self.start_time = None
+        self.end_time = None
+
+    def start(self):
+        self.latencies = []
+        self.errors = 0
+        self.start_time = time.monotonic()
+
+    def stop(self):
+        self.end_time = time.monotonic()
+
+    def record(self, latency_ms):
+        self.latencies.append(latency_ms)
+
+    def record_error(self):
+        self.errors += 1
+
+    def duration(self):
+        if self.start_time is None or self.end_time is None:
+            return 0.0
+        return self.end_time - self.start_time
+
+    def total_requests(self):
+        return len(self.latencies) + self.errors
+
+    def rps(self):
+        d = self.duration()
+        if d == 0:
+            return 0.0
+        return self.total_requests() / d
+
+    def percentile(self, p):
+        if not self.latencies:
+            return 0.0
+        sorted_lats = sorted(self.latencies)
+        idx = int(len(sorted_lats) * p / 100)
+        idx = min(idx, len(sorted_lats) - 1)
+        return sorted_lats[idx]
+
+    def error_rate(self):
+        total = self.total_requests()
+        if total == 0:
+            return 0.0
+        return self.errors / total * 100
+
+
+def print_stats(name, stats, concurrency):
+    total = stats.total_requests()
+    errors = stats.errors
+    error_rate = stats.error_rate()
+    rps = stats.rps()
+    duration = stats.duration()
+
+    lat_min = min(stats.latencies) if stats.latencies else 0
+    p50 = stats.percentile(50)
+    p95 = stats.percentile(95)
+    p99 = stats.percentile(99)
+    lat_max = max(stats.latencies) if stats.latencies else 0
+
+    print()
+    print(f"── {name} {'─' * max(1, 50 - len(name))}")
+    print(f"  Requests:    {total:,}    Errors: {errors} ({error_rate:.1f}%)")
+    print(f"  RPS:         {rps:.1f}")
+    print(
+        f"  Latency:     min={lat_min:.0f}ms  p50={p50:.0f}ms"
+        f"  p95={p95:.0f}ms  p99={p99:.0f}ms  max={lat_max:.0f}ms"
+    )
+    print(f"  Duration:    {duration:.1f}s    Concurrency: {concurrency}")
+    print()
