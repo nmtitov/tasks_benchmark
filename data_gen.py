@@ -23,12 +23,12 @@ def gen_task_identity(user_id):
         "title": f"Bench task {uuid.uuid4().hex[:8]}",
         "description": "Benchmark test task",
         "local_archived_at": None,
-        "created_at": now,
-        "updated_at": now,
-        "deleted_at": None,
-        "sv_uploaded_at": None,
+        "utc_created_at": now,
+        "utc_updated_at": now,
+        "utc_deleted_at": None,
+        "sv_utc_uploaded_at": None,
         "cl_needs_upload": True,
-        "cl_upload_error_at": None,
+        "cl_utc_upload_error_at": None,
     }
 
 
@@ -54,12 +54,12 @@ def gen_task_schedule(user_id, task_identity_id, group_id=None):
         "priority": 1,
         "local_start_date": _today(),
         "local_end_date": None,
-        "created_at": now,
-        "updated_at": now,
-        "deleted_at": None,
-        "sv_uploaded_at": None,
+        "utc_created_at": now,
+        "utc_updated_at": now,
+        "utc_deleted_at": None,
+        "sv_utc_uploaded_at": None,
         "cl_needs_upload": True,
-        "cl_upload_error_at": None,
+        "cl_utc_upload_error_at": None,
     }
 
 
@@ -73,12 +73,12 @@ def gen_timer(user_id, task_identity_id, task_schedule_id, status="RUN"):
         "local_reference_day": _today(),
         "status": status,
         "local_created_at": _local_now_naive(),
-        "created_at": now,
-        "updated_at": now,
-        "deleted_at": None,
-        "sv_uploaded_at": None,
+        "utc_created_at": now,
+        "utc_updated_at": now,
+        "utc_deleted_at": None,
+        "sv_utc_uploaded_at": None,
         "cl_needs_upload": True,
-        "cl_upload_error_at": None,
+        "cl_utc_upload_error_at": None,
     }
 
 
@@ -102,10 +102,10 @@ def gen_group(user_id):
         "pd_sat": False,
         "pd_sun": False,
         "is_archived": False,
-        "created_at": now,
-        "updated_at": now,
-        "deleted_at": None,
-        "sv_uploaded_at": None,
+        "utc_created_at": now,
+        "utc_updated_at": now,
+        "utc_deleted_at": None,
+        "sv_utc_uploaded_at": None,
         "cl_needs_upload": True,
-        "cl_upload_error_at": None,
+        "cl_utc_upload_error_at": None,
     }

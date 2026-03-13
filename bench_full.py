@@ -53,7 +53,7 @@ async def full_workflow(session, base_url, user, stats):
 
         # 5. Complete the timer (status=CMP)
         timer["status"] = "CMP"
-        timer["updated_at"] = timer["created_at"]  # Will be overwritten by server
+        timer["utc_updated_at"] = timer["utc_created_at"]  # Will be overwritten by server
         async with session.put(f"{base_url}/api/timers/upsert", json=timer, headers=headers) as resp:
             if resp.status not in (200, 201):
                 stats.record_error()
