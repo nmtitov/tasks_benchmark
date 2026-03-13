@@ -70,7 +70,7 @@ def gen_timer(user_id, task_identity_id, task_schedule_id, status="RUN"):
         "user_id": user_id,
         "task_identity_id": task_identity_id,
         "task_schedule_id": task_schedule_id,
-        "reference_day": _today(),
+        "local_reference_day": _today(),
         "status": status,
         "local_created_at": _local_now_naive(),
         "created_at": now,
