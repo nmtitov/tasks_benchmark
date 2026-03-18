@@ -9,7 +9,7 @@ import aiohttp
 
 from auth import BenchUser, cleanup_bench_user
 from config import add_common_args, resolve_target
-from data_gen import gen_group, gen_task_identity, gen_task_schedule, gen_timer
+from data_gen import gen_task_identity, gen_task_schedule, gen_timer
 from stats import Stats, print_stats
 
 
@@ -19,15 +19,7 @@ async def full_workflow(session, base_url, user, stats):
     t0 = time.monotonic()
 
     try:
-        # 1. Create a group
-        group = gen_group(user.user_id)
-        async with session.put(f"{base_url}/api/groups/upsert", json=group, headers=headers) as resp:
-            if resp.status not in (200, 201):
-                stats.record_error()
-                return
-            group_data = await resp.json()
-
-        # 2. Create a task identity
+        # 1. Create a task identity
         identity = gen_task_identity(user.user_id)
         async with session.put(f"{base_url}/api/task-identities/upsert", json=identity, headers=headers) as resp:
             if resp.status not in (200, 201):
@@ -35,15 +27,15 @@ async def full_workflow(session, base_url, user, stats):
                 return
             identity_data = await resp.json()
 
-        # 3. Create a task schedule
-        schedule = gen_task_schedule(user.user_id, identity["id"], group["id"])
+        # 2. Create a task schedule
+        schedule = gen_task_schedule(user.user_id, identity["id"])
         async with session.put(f"{base_url}/api/task-schedules/upsert", json=schedule, headers=headers) as resp:
             if resp.status not in (200, 201):
                 stats.record_error()
                 return
             schedule_data = await resp.json()
 
-        # 4. Start a timer (status=RUN)
+        # 3. Start a timer (status=RUN)
         timer = gen_timer(user.user_id, identity["id"], schedule["id"], status="RUN")
         timer_id = timer["id"]
         async with session.put(f"{base_url}/api/timers/upsert", json=timer, headers=headers) as resp:
@@ -51,7 +43,7 @@ async def full_workflow(session, base_url, user, stats):
                 stats.record_error()
                 return
 
-        # 5. Complete the timer (status=CMP)
+        # 4. Complete the timer (status=CMP)
         timer["status"] = "CMP"
         timer["utc_updated_at"] = timer["utc_created_at"]  # Will be overwritten by server
         async with session.put(f"{base_url}/api/timers/upsert", json=timer, headers=headers) as resp:
@@ -59,7 +51,7 @@ async def full_workflow(session, base_url, user, stats):
                 stats.record_error()
                 return
 
-        # 6. Sync download
+        # 5. Sync download
         async with session.get(f"{base_url}/api/sync/download", headers=headers) as resp:
             if resp.status != 200:
                 stats.record_error()
@@ -126,7 +118,7 @@ async def main():
             await asyncio.gather(*workers, return_exceptions=True)
             stats.stop()
 
-        print_stats("Full workflow (group→identity→schedule→timer→complete→sync)", stats, args.concurrency)
+        print_stats("Full workflow (identity→schedule→timer→complete→sync)", stats, args.concurrency)
 
     finally:
         if args.cleanup:
