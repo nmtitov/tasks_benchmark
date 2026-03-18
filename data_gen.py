@@ -52,6 +52,7 @@ def gen_task_schedule(user_id, task_identity_id, group_id=None):
         "display_style": "CIRC_F",
         "day_part": "MO",
         "priority": 1,
+        "is_optional": False,
         "local_start_date": _today(),
         "local_end_date": None,
         "utc_created_at": now,
