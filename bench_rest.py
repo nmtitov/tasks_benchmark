@@ -160,11 +160,16 @@ async def main():
     try:
         scenarios = SCENARIOS if args.scenario == "all" else [args.scenario]
         for scenario in scenarios:
-            await run_scenario(
-                scenario, base_url, user,
-                args.concurrency, args.duration, args.warmup,
-                verbose=args.verbose,
-            )
+            try:
+                await run_scenario(
+                    scenario, base_url, user,
+                    args.concurrency, args.duration, args.warmup,
+                    verbose=args.verbose,
+                )
+            except Exception as e:
+                print(f"\n── REST API: {scenario} {'─' * max(1, 50 - len(scenario))}")
+                print(f"  SKIPPED: {e}")
+                print()
     finally:
         if args.cleanup:
             print("Cleaning up...")

@@ -17,11 +17,11 @@ def _today():
 def gen_task_identity(user_id):
     now = _utc_now()
     return {
-        "id": str(uuid.uuid4()),
+        "id": f"tid_{uuid.uuid4()}",
         "user_id": user_id,
         "is_demo": False,
-        "title": f"Bench task {uuid.uuid4().hex[:8]}",
-        "description": "Benchmark test task",
+        "title": f"e1:Bench task {uuid.uuid4().hex[:8]}",
+        "description": "e1:Benchmark test task",
         "local_archived_at": None,
         "utc_created_at": now,
         "utc_updated_at": now,
@@ -35,7 +35,7 @@ def gen_task_identity(user_id):
 def gen_task_schedule(user_id, task_identity_id, group_id=None):
     now = _utc_now()
     return {
-        "id": str(uuid.uuid4()),
+        "id": f"tsc_{uuid.uuid4()}",
         "user_id": user_id,
         "task_identity_id": task_identity_id,
         "group_id": group_id,
@@ -66,7 +66,7 @@ def gen_task_schedule(user_id, task_identity_id, group_id=None):
 def gen_timer(user_id, task_identity_id, task_schedule_id, status="RUN"):
     now = _utc_now()
     return {
-        "id": str(uuid.uuid4()),
+        "id": f"tmr_{uuid.uuid4()}",
         "user_id": user_id,
         "task_identity_id": task_identity_id,
         "task_schedule_id": task_schedule_id,
@@ -85,11 +85,11 @@ def gen_timer(user_id, task_identity_id, task_schedule_id, status="RUN"):
 def gen_group(user_id):
     now = _utc_now()
     return {
-        "id": str(uuid.uuid4()),
+        "id": f"grp_{uuid.uuid4()}",
         "user_id": user_id,
         "is_demo": False,
-        "title": f"Bench group {uuid.uuid4().hex[:8]}",
-        "description": "Benchmark test group",
+        "title": f"e1:Bench group {uuid.uuid4().hex[:8]}",
+        "description": "e1:Benchmark test group",
         "priority": 1,
         "day_part": "MO",
         "separator_seconds": 0,
