@@ -3,6 +3,7 @@
 
 import argparse
 import asyncio
+import sys
 import time
 
 import aiohttp
@@ -11,6 +12,20 @@ from auth import BenchUser, cleanup_bench_user
 from config import add_common_args, resolve_target
 from data_gen import gen_group, gen_task_identity, gen_task_schedule, gen_timer
 from stats import Stats, print_stats
+
+# Box-drawing output (─, └, …) crashes on Windows' cp1252 console; force UTF-8.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
+
+# Per-request timeout GUARD. Without it aiohttp's default is 5 min, so under
+# saturation a single stalled connection blocks the whole asyncio.gather for
+# ~300s (looks like a hang). With a cap, a stall is recorded as an error and the
+# worker keeps going — the benchmark stays responsive and the error rate becomes
+# a real signal of the server's saturation point.
+REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=20)
 
 SCENARIOS = ["heartbeat", "sync", "upsert_identity", "upsert_timer", "list_timers"]
 
@@ -25,7 +40,7 @@ async def run_scenario(name, base_url, user, concurrency, duration, warmup, verb
     pre_identity = None
     pre_schedule = None
     if name in ("upsert_timer", "list_timers"):
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(timeout=REQUEST_TIMEOUT) as session:
             identity = gen_task_identity(user.user_id)
             url = f"{base_url}/api/task-identities/upsert"
             async with session.put(url, json=identity, headers=user.auth_headers()) as resp:
@@ -105,7 +120,7 @@ async def run_scenario(name, base_url, user, concurrency, duration, warmup, verb
             except Exception:
                 collector.record_error()
 
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(timeout=REQUEST_TIMEOUT) as session:
         # Warmup phase
         if warmup > 0:
             stop = False
@@ -151,7 +166,7 @@ async def main():
 
     # Create bench user
     print("Setting up...")
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(timeout=REQUEST_TIMEOUT) as session:
         user = BenchUser(base_url)
         await user.signup(session)
         await user.get_user_id(session)

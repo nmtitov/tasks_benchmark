@@ -3,6 +3,10 @@ import string
 
 import aiohttp
 
+# Per-request timeout guard (aiohttp default is 5 min — a stalled connection
+# would otherwise hang setup/cleanup indefinitely under server saturation).
+_TIMEOUT = aiohttp.ClientTimeout(total=20)
+
 
 def _random_suffix(length=8):
     return "".join(random.choices(string.ascii_lowercase + string.digits, k=length))
@@ -59,7 +63,7 @@ class BenchUser:
 
 
 async def create_bench_user(base_url):
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(timeout=_TIMEOUT) as session:
         user = BenchUser(base_url)
         await user.signup(session)
         await user.get_user_id(session)
@@ -68,6 +72,6 @@ async def create_bench_user(base_url):
 
 
 async def cleanup_bench_user(user):
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(timeout=_TIMEOUT) as session:
         await user.delete(session)
         print(f"  Deleted bench user: {user.email}")
