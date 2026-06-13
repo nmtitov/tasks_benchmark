@@ -36,3 +36,7 @@ python bench_rest.py --target local --duration 10
 python bench_ws.py --target local --scenario connections
 python bench_full.py --target local --duration 10
 ```
+
+## Commit Attribution
+
+**NEVER add a co-author trailer to commits or PRs.** Do not add `Co-Authored-By: Claude ...` (or any Claude/Anthropic attribution) to commit messages or pull request descriptions.
