@@ -41,13 +41,18 @@ class BenchUser:
             self.token = data["token"]
 
     async def get_user_id(self, session):
-        url = f"{self.base_url}/api/auth/validate-token"
+        # NOTE: /api/auth/validate-token is an INTERNAL endpoint that requires the
+        # shared X-WS-Internal-Secret header (audit #16) — public clients get 403.
+        # The user id is part of the public /api/user response, so read it there
+        # (this is exactly what the Django test helper does).
+        url = f"{self.base_url}/api/user"
         headers = {"X-Token": self.token}
         async with session.get(url, headers=headers) as resp:
             if resp.status != 200:
                 text = await resp.text()
-                raise RuntimeError(f"Validate-token failed ({resp.status}): {text}")
-            self.user_id = await resp.text()
+                raise RuntimeError(f"Get user failed ({resp.status}): {text}")
+            data = await resp.json()
+            self.user_id = data["id"]
         return self.user_id
 
     async def delete(self, session):
