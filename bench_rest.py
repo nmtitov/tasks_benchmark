@@ -62,14 +62,23 @@ async def run_scenario(name, base_url, user, concurrency, duration, warmup, verb
         if verbose and not first_error_logged:
             first_error_logged = True
             text = await resp.text()
-            print(f"  [ERROR] {resp.status}: {text[:500]}")
+            xapp = resp.headers.get("X-App", "-")
+            xorigin = resp.headers.get("X-Origin", "-")
+            print(f"  [ERROR] {resp.status} X-App={xapp} X-Origin={xorigin}: {text[:500]}")
 
-    async def make_request(session):
+    async def handle(resp, collector):
+        # Attribute any 5xx by its X-App/X-Origin markers (see CLAUDE.md) so a
+        # Cloudflare-edge 500 is never miscounted as a Django code regression.
+        if resp.status >= 500:
+            collector.classify_5xx(resp.headers)
+            await log_error(resp)
+
+    async def make_request(session, collector):
         if name == "heartbeat":
             url = f"{base_url}/api/auth/heartbeat"
             async with session.post(url, headers=user.auth_headers()) as resp:
                 if resp.status not in (200, 204):
-                    await log_error(resp)
+                    await handle(resp, collector)
                 return resp.status in (200, 204)
 
         elif name == "sync":
@@ -77,7 +86,7 @@ async def run_scenario(name, base_url, user, concurrency, duration, warmup, verb
             async with session.get(url, headers=user.auth_headers()) as resp:
                 await resp.read()
                 if resp.status != 200:
-                    await log_error(resp)
+                    await handle(resp, collector)
                 return resp.status == 200
 
         elif name == "upsert_identity":
@@ -85,7 +94,7 @@ async def run_scenario(name, base_url, user, concurrency, duration, warmup, verb
             url = f"{base_url}/api/task-identities/upsert"
             async with session.put(url, json=identity, headers=user.auth_headers()) as resp:
                 if resp.status not in (200, 201):
-                    await log_error(resp)
+                    await handle(resp, collector)
                 return resp.status in (200, 201)
 
         elif name == "upsert_timer":
@@ -93,7 +102,7 @@ async def run_scenario(name, base_url, user, concurrency, duration, warmup, verb
             url = f"{base_url}/api/timers/upsert"
             async with session.put(url, json=timer, headers=user.auth_headers()) as resp:
                 if resp.status not in (200, 201):
-                    await log_error(resp)
+                    await handle(resp, collector)
                 return resp.status in (200, 201)
 
         elif name == "list_timers":
@@ -101,7 +110,7 @@ async def run_scenario(name, base_url, user, concurrency, duration, warmup, verb
             async with session.get(url, headers=user.auth_headers()) as resp:
                 await resp.read()
                 if resp.status != 200:
-                    await log_error(resp)
+                    await handle(resp, collector)
                 return resp.status == 200
 
         return False
@@ -111,7 +120,7 @@ async def run_scenario(name, base_url, user, concurrency, duration, warmup, verb
         while not stop:
             t0 = time.monotonic()
             try:
-                ok = await make_request(session)
+                ok = await make_request(session, collector)
                 latency_ms = (time.monotonic() - t0) * 1000
                 if ok:
                     collector.record(latency_ms)
