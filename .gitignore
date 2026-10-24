@@ -329,3 +329,4 @@ Runner.ipa
 ios/fastlane/report.xml
 
 .claude/settings.local.json
+__pycache__/
